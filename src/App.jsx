@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import DrawingCanvas from './components/DrawingCanvas.jsx';
 import ControlPanel from './components/ControlPanel.jsx';
+import MobileQuickBar from './components/MobileQuickBar.jsx';
+import MobileDrawer from './components/MobileDrawer.jsx';
 import { useSpirographEngine } from './hooks/useSpirographEngine.js';
 import { useResizeObserver } from './hooks/useResizeObserver.js';
+import { useMediaQuery } from './hooks/useMediaQuery.js';
 import { exportCanvasAsPng } from './utils/exporter.js';
 import { randomPreset } from './utils/presets.js';
 
@@ -55,6 +58,9 @@ export default function App() {
   const [color, setColor] = useState(DEFAULT_COLOR);
   const [view, setView] = useState(DEFAULT_VIEW);
   const [drawing, setDrawing] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const isMobile = useMediaQuery('(max-width: 820px)');
 
   const drawCanvasRef = useRef(null);
   const overlayCanvasRef = useRef(null);
@@ -176,8 +182,29 @@ export default function App() {
     setColor({ ...DEFAULT_COLOR, ...preset.color });
   }, []);
 
+  const controlPanel = (
+    <ControlPanel
+      params={params}
+      color={color}
+      view={view}
+      playing={drawing}
+      onParamsChange={setParams}
+      onColorChange={setColor}
+      onViewChange={setView}
+      onPlayPause={handleDrawToggle}
+      onClear={handleClear}
+      onReset={handleReset}
+      onUndo={undoLastRun}
+      onExport={handleExport}
+      onRandomize={handleRandomize}
+      onApplyPreset={handleApplyPreset}
+    />
+  );
+
   return (
-    <div className={`app app--${view.theme}`}>
+    <div
+      className={`app app--${view.theme} ${isMobile ? 'app--mobile' : 'app--desktop'}`}
+    >
       <header className="app__header">
         <div className="app__brand">
           <span className="app__brand-mark" aria-hidden="true">
@@ -215,22 +242,30 @@ export default function App() {
           onPointerEnter={handlePointerEnter}
           onPointerLeave={handlePointerLeave}
         />
-        <ControlPanel
-          params={params}
-          color={color}
-          view={view}
-          playing={drawing}
-          onParamsChange={setParams}
-          onColorChange={setColor}
-          onViewChange={setView}
-          onPlayPause={handleDrawToggle}
-          onClear={handleClear}
-          onReset={handleReset}
-          onUndo={undoLastRun}
-          onExport={handleExport}
-          onRandomize={handleRandomize}
-          onApplyPreset={handleApplyPreset}
-        />
+
+        {isMobile ? (
+          <>
+            <MobileQuickBar
+              params={params}
+              color={color}
+              playing={drawing}
+              drawMode={view.drawMode}
+              onParamsChange={setParams}
+              onColorChange={setColor}
+              onPlayPause={handleDrawToggle}
+              onClear={handleClear}
+              onOpenMenu={() => setMobileMenuOpen(true)}
+            />
+            <MobileDrawer
+              open={mobileMenuOpen}
+              onClose={() => setMobileMenuOpen(false)}
+            >
+              {controlPanel}
+            </MobileDrawer>
+          </>
+        ) : (
+          controlPanel
+        )}
       </main>
     </div>
   );

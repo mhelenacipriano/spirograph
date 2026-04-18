@@ -1,0 +1,289 @@
+@use 'variables' as *;
+
+// ============================================================================
+// Mobile layout overrides
+// ============================================================================
+// Below the mobile breakpoint, the canvas takes the full viewport below the
+// header, and all controls float on top of it as pills / FABs. The full
+// control panel lives inside a bottom-sheet drawer that opens from a menu
+// button.
+
+.app--mobile {
+  .app__header {
+    padding: 8px 14px;
+  }
+  .app__title {
+    font-size: 14px;
+  }
+  .app__subtitle {
+    display: none;
+  }
+  .app__brand-mark {
+    width: 32px;
+    height: 32px;
+  }
+  .app__header-actions {
+    display: none;
+  }
+
+  .app__main {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    position: relative;
+  }
+
+  .drawing-stage__hint {
+    display: none;
+  }
+}
+
+// ============================================================================
+// Floating shape pill (top center)
+// ============================================================================
+.mq-pill {
+  position: absolute;
+  display: flex;
+  gap: 4px;
+  padding: 5px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  z-index: 10;
+  max-width: calc(100vw - 24px);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  &--top {
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  &--colors {
+    bottom: 20px;
+    left: 12px;
+    padding: 6px;
+  }
+}
+
+.mq-chip {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--app-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background $transition-fast, color $transition-fast;
+  padding: 0;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    color: var(--app-text);
+  }
+
+  &--active {
+    color: white;
+    background: linear-gradient(135deg, $accent, $accent-2);
+  }
+}
+
+// ============================================================================
+// Color swatches
+// ============================================================================
+.mq-swatch {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform $transition-fast, border-color $transition-fast;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+
+  &:hover {
+    transform: scale(1.08);
+  }
+
+  &--active {
+    border-color: white;
+    box-shadow: 0 0 0 2px var(--app-accent), inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+    transform: scale(1.1);
+  }
+}
+
+// ============================================================================
+// FAB stack (bottom right)
+// ============================================================================
+.mq-fabs {
+  position: absolute;
+  bottom: 20px;
+  right: 14px;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.mq-fab {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface);
+  color: var(--app-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+  transition: transform $transition-fast, background $transition-fast;
+  padding: 0;
+
+  &:active {
+    transform: scale(0.94);
+  }
+
+  &--primary {
+    width: 56px;
+    height: 56px;
+    border-color: transparent;
+    background: linear-gradient(135deg, $accent, $accent-2);
+    color: white;
+    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.45);
+  }
+}
+
+// ============================================================================
+// Bottom-sheet drawer
+// ============================================================================
+.mobile-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+
+  &--open {
+    pointer-events: auto;
+  }
+
+  &__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  &--open &__backdrop {
+    opacity: 1;
+  }
+
+  &__sheet {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--app-surface);
+    border-top: 1px solid var(--app-border);
+    border-radius: 20px 20px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+    box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  &--open &__sheet {
+    transform: translateY(0);
+  }
+
+  &__header {
+    position: relative;
+    padding: 10px 16px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--app-border);
+    flex-shrink: 0;
+  }
+
+  &__handle {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--app-border);
+  }
+
+  &__title {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 6px 0 0;
+    color: var(--app-text);
+  }
+
+  &__close {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-30%);
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--app-text-muted);
+    cursor: pointer;
+    border-radius: 50%;
+
+    &:hover {
+      color: var(--app-text);
+      background: var(--app-surface-2);
+    }
+  }
+
+  &__content {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  // Make the embedded ControlPanel drop its sidebar-specific chrome so it
+  // renders naturally inside the sheet.
+  .control-panel {
+    background: transparent;
+    border-left: none;
+    border-top: none;
+    max-height: none;
+    overflow: visible;
+  }
+}
