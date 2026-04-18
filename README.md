@@ -1,4 +1,4 @@
-# Spirograph Studio
+# Looploom
 
 An interactive spirograph drawing app built with **React**, **Vite**, and **SCSS**.
 Place outer guides and inner gears, tune the pen, pick colors, and watch a live hypotrochoid / generic-rolling pattern unfold on a high-DPI canvas. Export as PNG when you like the result.
