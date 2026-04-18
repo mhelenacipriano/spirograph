@@ -1,4 +1,4 @@
-const SHAPES = [
+export const SHAPES = [
   { id: 'circle', label: 'Circle' },
   { id: 'ellipse', label: 'Ellipse' },
   { id: 'triangle', label: 'Triangle' },
@@ -35,7 +35,7 @@ export default function ShapeSelector({ label, value, onChange, shapes = SHAPES 
   );
 }
 
-function ShapeIcon({ id }) {
+export function ShapeIcon({ id }) {
   const common = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.6 };
   switch (id) {
     case 'circle':
