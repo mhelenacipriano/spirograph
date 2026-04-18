@@ -177,6 +177,27 @@ export default function App() {
     liftPen();
   }, [liftPen]);
 
+  // Mobile-only: tapping the stage auto-enables drawing mode so the user
+  // doesn't need to hit the Play FAB first. We set the ref synchronously so
+  // the pointermove that follows the same tap isn't gated on a stale state.
+  const isMobileRef = useRef(isMobile);
+  isMobileRef.current = isMobile;
+
+  const handlePointerDown = useCallback(
+    (e) => {
+      if (!isMobileRef.current) return;
+      if (!drawingRef.current) {
+        drawingRef.current = true;
+        setDrawing(true);
+      }
+      if (drawModeRef.current === 'cursor') {
+        prevAngleRef.current = readAngle(e.clientX, e.clientY);
+        liftPen();
+      }
+    },
+    [liftPen, readAngle]
+  );
+
   // Toggling play state or switching modes lifts the pen so there's no
   // jumping line segment across the transition.
   useEffect(() => {
@@ -278,6 +299,7 @@ export default function App() {
           onPointerMove={handlePointerMove}
           onPointerEnter={handlePointerEnter}
           onPointerLeave={handlePointerLeave}
+          onPointerDown={handlePointerDown}
         />
 
         {isMobile ? (

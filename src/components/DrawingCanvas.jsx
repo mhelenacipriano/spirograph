@@ -21,6 +21,7 @@ const DrawingCanvas = forwardRef(function DrawingCanvas(
     onPointerMove,
     onPointerEnter,
     onPointerLeave,
+    onPointerDown,
   },
   _ref
 ) {
@@ -33,6 +34,7 @@ const DrawingCanvas = forwardRef(function DrawingCanvas(
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
+      onPointerDown={onPointerDown}
     >
       <div className="drawing-stage__frame" aria-hidden="true" />
       <canvas ref={drawCanvasRef} className="drawing-stage__canvas drawing-stage__canvas--draw" />
