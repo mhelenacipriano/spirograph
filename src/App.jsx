@@ -103,7 +103,7 @@ export default function App() {
     });
   }, [maxReach]);
 
-  const { clearDrawing, resetEngine, undoLastRun, advanceBy, liftPen } =
+  const { clearDrawing, resetEngine, undoLastRun, redoLastRun, advanceBy, liftPen } =
     useSpirographEngine({
       drawCanvasRef,
       overlayCanvasRef,
@@ -313,6 +313,8 @@ export default function App() {
               onColorChange={setColor}
               onPlayPause={handleDrawToggle}
               onClear={handleClear}
+              onUndo={undoLastRun}
+              onRedo={redoLastRun}
               onOpenMenu={() => setMobileMenuOpen(true)}
             />
             <MobileDrawer

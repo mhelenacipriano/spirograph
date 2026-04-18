@@ -26,6 +26,8 @@ export default function MobileQuickBar({
   onColorChange,
   onPlayPause,
   onClear,
+  onUndo,
+  onRedo,
   onOpenMenu,
 }) {
   const activeSwatch = color.mode === 'solid' ? color.value : null;
@@ -37,20 +39,42 @@ export default function MobileQuickBar({
 
   return (
     <>
-      <div className="mq-pill mq-pill--top" role="radiogroup" aria-label="Outer shape">
-        {SHAPES.map((s) => (
+      <div className="mq-top-bar">
+        <div className="mq-pill" role="radiogroup" aria-label="Outer shape">
+          {SHAPES.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              role="radio"
+              aria-checked={params.outerShape === s.id}
+              aria-label={s.label}
+              className={`mq-chip ${params.outerShape === s.id ? 'mq-chip--active' : ''}`}
+              onClick={() => onParamsChange({ ...params, outerShape: s.id })}
+            >
+              <ShapeIcon id={s.id} />
+            </button>
+          ))}
+        </div>
+        <div className="mq-pill mq-pill--history" aria-label="History">
           <button
-            key={s.id}
             type="button"
-            role="radio"
-            aria-checked={params.outerShape === s.id}
-            aria-label={s.label}
-            className={`mq-chip ${params.outerShape === s.id ? 'mq-chip--active' : ''}`}
-            onClick={() => onParamsChange({ ...params, outerShape: s.id })}
+            className="mq-chip mq-chip--action"
+            onClick={onUndo}
+            aria-label="Undo"
+            title="Undo"
           >
-            <ShapeIcon id={s.id} />
+            <UndoIcon />
           </button>
-        ))}
+          <button
+            type="button"
+            className="mq-chip mq-chip--action"
+            onClick={onRedo}
+            aria-label="Redo"
+            title="Redo"
+          >
+            <RedoIcon />
+          </button>
+        </div>
       </div>
 
       <div className="mq-pill mq-pill--colors" aria-label="Color">
@@ -127,5 +151,17 @@ const ClearIcon = () => (
 const MenuIcon = () => (
   <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
     <path d="M4 7h16M4 12h16M4 17h16" {...I} />
+  </svg>
+);
+const UndoIcon = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+    <path d="M9 14L4 9l5-5" {...I} />
+    <path d="M4 9h10a6 6 0 0 1 6 6v0a6 6 0 0 1-6 6H9" {...I} />
+  </svg>
+);
+const RedoIcon = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+    <path d="M15 14l5-5-5-5" {...I} />
+    <path d="M20 9H10a6 6 0 0 0-6 6v0a6 6 0 0 0 6 6h5" {...I} />
   </svg>
 );

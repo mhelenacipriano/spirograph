@@ -38,10 +38,24 @@
 }
 
 // ============================================================================
-// Floating shape pill (top center)
+// Top bar — holds the shape pill and the undo/redo history pill side-by-side.
+// ============================================================================
+.mq-top-bar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  max-width: calc(100vw - 24px);
+}
+
+// ============================================================================
+// Floating pills
 // ============================================================================
 .mq-pill {
-  position: absolute;
   display: flex;
   gap: 4px;
   padding: 5px;
@@ -51,26 +65,26 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-  z-index: 10;
-  max-width: calc(100vw - 24px);
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  min-width: 0;
 
   &::-webkit-scrollbar {
     display: none;
   }
 
-  &--top {
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
+  &--history {
+    flex-shrink: 0;
+    overflow: visible;
   }
 
   &--colors {
+    position: absolute;
     bottom: 20px;
     left: 12px;
     padding: 6px;
+    z-index: 10;
   }
 }
 
@@ -101,6 +115,15 @@
   &--active {
     color: white;
     background: linear-gradient(135deg, $accent, $accent-2);
+  }
+
+  // Action variant (e.g. Undo / Redo): no active state, slightly subdued.
+  &--action {
+    color: var(--app-text);
+  }
+
+  &--action:active {
+    background: var(--app-surface-2);
   }
 }
 
