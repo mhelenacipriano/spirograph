@@ -67,6 +67,42 @@ export default function App() {
   const containerRef = useRef(null);
   const containerSize = useResizeObserver(containerRef);
 
+  // ----- Fit-to-container clamping -----
+  // The pen's furthest reach is `outerSize + max(0, penOffset - innerSize)`.
+  // We compute what each slider's max should be given the other two values
+  // and the container size, then clamp the live params so the drawing never
+  // renders outside the visible canvas.
+  const CANVAS_PADDING = 24;
+  const maxReach = containerSize
+    ? Math.min(containerSize.width, containerSize.height) / 2 - CANVAS_PADDING
+    : null;
+
+  const limits = maxReach == null
+    ? { maxOuterSize: 320, maxInnerSize: 260, maxPenOffset: 260 }
+    : {
+        maxOuterSize: Math.max(60, Math.floor(maxReach - Math.max(0, params.penOffset - params.innerSize))),
+        maxInnerSize: Math.max(15, Math.min(260, params.outerSize - 10)),
+        maxPenOffset: Math.max(0, Math.floor(maxReach - params.outerSize + params.innerSize)),
+      };
+
+  useEffect(() => {
+    if (maxReach == null) return;
+    setParams((p) => {
+      const newOuter = Math.min(p.outerSize, Math.floor(maxReach));
+      const newInner = Math.min(p.innerSize, Math.max(15, newOuter - 10));
+      const penCap = Math.max(0, Math.floor(maxReach - newOuter + newInner));
+      const newPen = Math.min(p.penOffset, penCap);
+      if (
+        newOuter === p.outerSize &&
+        newInner === p.innerSize &&
+        newPen === p.penOffset
+      ) {
+        return p;
+      }
+      return { ...p, outerSize: newOuter, innerSize: newInner, penOffset: newPen };
+    });
+  }, [maxReach]);
+
   const { clearDrawing, resetEngine, undoLastRun, advanceBy, liftPen } =
     useSpirographEngine({
       drawCanvasRef,
@@ -188,6 +224,7 @@ export default function App() {
       color={color}
       view={view}
       playing={drawing}
+      limits={limits}
       onParamsChange={setParams}
       onColorChange={setColor}
       onViewChange={setView}
@@ -215,7 +252,7 @@ export default function App() {
             </svg>
           </span>
           <div>
-            <h1 className="app__title">Spirograph Studio</h1>
+            <h1 className="app__title">Looploom</h1>
             <p className="app__subtitle">{getSubtitle(view.drawMode, drawing)}</p>
           </div>
         </div>

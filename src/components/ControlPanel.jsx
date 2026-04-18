@@ -22,6 +22,7 @@ export default function ControlPanel({
   color,
   view,
   playing,
+  limits,
   onParamsChange,
   onColorChange,
   onViewChange,
@@ -84,6 +85,7 @@ export default function ControlPanel({
         <ParameterSliders
           params={params}
           drawMode={view.drawMode}
+          limits={limits}
           onChange={onParamsChange}
         />
       </section>
@@ -133,7 +135,7 @@ export default function ControlPanel({
       </section>
 
       <footer className="control-panel__footer">
-        <span>Spirograph Studio</span>
+        <span>Looploom</span>
         <a
           className="control-panel__footer-link"
           href="https://github.com/"

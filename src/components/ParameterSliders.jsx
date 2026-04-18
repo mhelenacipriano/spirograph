@@ -31,30 +31,34 @@ function Slider({ label, value, min, max, step = 1, suffix, onChange }) {
   );
 }
 
-export default function ParameterSliders({ params, drawMode, onChange }) {
+export default function ParameterSliders({ params, drawMode, limits, onChange }) {
   const update = (patch) => onChange({ ...params, ...patch });
+
+  const maxOuter = limits?.maxOuterSize ?? 320;
+  const maxInner = limits?.maxInnerSize ?? Math.min(260, params.outerSize - 10);
+  const maxPen = limits?.maxPenOffset ?? Math.max(30, params.innerSize * 2.2);
 
   return (
     <div className="parameter-sliders">
       <Slider
         label="Outer size"
-        value={params.outerSize}
-        min={80}
-        max={320}
+        value={Math.min(params.outerSize, maxOuter)}
+        min={60}
+        max={Math.max(60, maxOuter)}
         onChange={(v) => update({ outerSize: v })}
       />
       <Slider
         label="Inner size"
-        value={params.innerSize}
+        value={Math.min(params.innerSize, maxInner)}
         min={15}
-        max={Math.min(260, params.outerSize - 10)}
+        max={Math.max(15, maxInner)}
         onChange={(v) => update({ innerSize: v })}
       />
       <Slider
         label="Pen offset"
-        value={params.penOffset}
+        value={Math.min(params.penOffset, maxPen)}
         min={0}
-        max={Math.max(30, params.innerSize * 2.2)}
+        max={Math.max(0, maxPen)}
         onChange={(v) => update({ penOffset: v })}
       />
       {drawMode === 'auto' && (
