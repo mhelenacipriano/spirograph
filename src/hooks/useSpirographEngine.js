@@ -179,11 +179,34 @@ export function useSpirographEngine({
   innerPerimRef.current = innerPerim;
   innerPathRef.current = innerPath;
 
-  // When the geometry changes, lift the pen so we don't draw a jumping line.
+  // A "run" is a stretch of drawing done with a single set of parameters.
+  // Whenever any visible parameter changes (shape, size, color, mirror, …)
+  // we snapshot the current canvas and lift the pen, marking the boundary.
+  // `undoLastRun` then restores the snapshot — rolling back only the strokes
+  // drawn since the most recent boundary, not the entire canvas.
+  const runKey = [
+    params.outerShape,
+    params.innerShape,
+    params.outerSize,
+    params.innerSize,
+    params.penOffset,
+    params.polygonSides,
+    params.ellipseRatio,
+    params.cornerSharpness,
+    params.lineWidth,
+    color.mode,
+    color.value,
+    color.rainbowSpeed,
+    color.cycleBaseHue,
+    color.cycleHueStep,
+    view.mirror,
+  ].join('|');
+
   useEffect(() => {
+    stateRef.current.lastSnapshot = snapshotCanvas(drawCanvasRef.current);
     stateRef.current.prevPoint = null;
     stateRef.current.trail = [];
-  }, [outerPath, innerPerim, params.penOffset]);
+  }, [runKey, drawCanvasRef]);
 
   // Configure canvases on size change. We clear the draw canvas on resize
   // because the coord frame is centered and snapshot-preserving across DPR
