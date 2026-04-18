@@ -204,6 +204,9 @@ export function useSpirographEngine({
 
   useEffect(() => {
     stateRef.current.lastSnapshot = snapshotCanvas(drawCanvasRef.current);
+    // Any new run invalidates the redo step — redo only makes sense
+    // immediately after an undo.
+    stateRef.current.redoSnapshot = null;
     stateRef.current.prevPoint = null;
     stateRef.current.trail = [];
   }, [runKey, drawCanvasRef]);
@@ -413,15 +416,29 @@ export function useSpirographEngine({
     stateRef.current.prevPoint = null;
     stateRef.current.trail = [];
     stateRef.current.lastSnapshot = null;
+    stateRef.current.redoSnapshot = null;
   }, [drawCanvasRef]);
 
   const undoLastRun = useCallback(() => {
     const snap = stateRef.current.lastSnapshot;
-    if (snap) {
-      restoreSnapshotTo(drawCanvasRef.current, snap);
-      stateRef.current.prevPoint = null;
-      stateRef.current.trail = [];
-    }
+    if (!snap) return;
+    // Capture the "post-run" canvas so redo can replay it.
+    stateRef.current.redoSnapshot = snapshotCanvas(drawCanvasRef.current);
+    restoreSnapshotTo(drawCanvasRef.current, snap);
+    stateRef.current.lastSnapshot = null;
+    stateRef.current.prevPoint = null;
+    stateRef.current.trail = [];
+  }, [drawCanvasRef]);
+
+  const redoLastRun = useCallback(() => {
+    const snap = stateRef.current.redoSnapshot;
+    if (!snap) return;
+    // Capture the current ("undone") canvas so a subsequent undo still works.
+    stateRef.current.lastSnapshot = snapshotCanvas(drawCanvasRef.current);
+    restoreSnapshotTo(drawCanvasRef.current, snap);
+    stateRef.current.redoSnapshot = null;
+    stateRef.current.prevPoint = null;
+    stateRef.current.trail = [];
   }, [drawCanvasRef]);
 
   const snapshotNow = useCallback(() => {
@@ -432,6 +449,7 @@ export function useSpirographEngine({
     clearDrawing,
     resetEngine,
     undoLastRun,
+    redoLastRun,
     snapshotNow,
     advanceBy,
     liftPen,
