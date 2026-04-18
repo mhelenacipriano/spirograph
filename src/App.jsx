@@ -1,0 +1,237 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import DrawingCanvas from './components/DrawingCanvas.jsx';
+import ControlPanel from './components/ControlPanel.jsx';
+import { useSpirographEngine } from './hooks/useSpirographEngine.js';
+import { useResizeObserver } from './hooks/useResizeObserver.js';
+import { exportCanvasAsPng } from './utils/exporter.js';
+import { randomPreset } from './utils/presets.js';
+
+const TAU = Math.PI * 2;
+
+const DEFAULT_PARAMS = {
+  outerShape: 'circle',
+  innerShape: 'circle',
+  outerSize: 230,
+  innerSize: 75,
+  penOffset: 55,
+  sensitivity: 1,
+  speed: 0.05,
+  stepSize: 0.008,
+  lineWidth: 1.2,
+  polygonSides: 5,
+  ellipseRatio: 0.65,
+  cornerSharpness: 4,
+};
+
+const DEFAULT_COLOR = {
+  mode: 'solid',
+  value: '#ec4899',
+  saturation: 75,
+  lightness: 60,
+  rainbowSpeed: 60,
+  cycleBaseHue: 200,
+  cycleHueStep: 47,
+};
+
+function getSubtitle(drawMode, drawing) {
+  if (drawMode === 'cursor') {
+    return drawing
+      ? 'Drawing on — move your cursor around the board to roll the gear.'
+      : 'Press Play, then move your cursor around the board to draw.';
+  }
+  return drawing ? 'Auto animation running.' : 'Press Play to start the auto animation.';
+}
+
+const DEFAULT_VIEW = {
+  showGuides: true,
+  showPenArm: true,
+  theme: 'dark',
+  mirror: 'none',
+  drawMode: 'cursor', // 'cursor' | 'auto'
+};
+
+export default function App() {
+  const [params, setParams] = useState(DEFAULT_PARAMS);
+  const [color, setColor] = useState(DEFAULT_COLOR);
+  const [view, setView] = useState(DEFAULT_VIEW);
+  const [drawing, setDrawing] = useState(false);
+
+  const drawCanvasRef = useRef(null);
+  const overlayCanvasRef = useRef(null);
+  const containerRef = useRef(null);
+  const containerSize = useResizeObserver(containerRef);
+
+  const { clearDrawing, resetEngine, undoLastRun, advanceBy, liftPen } =
+    useSpirographEngine({
+      drawCanvasRef,
+      overlayCanvasRef,
+      containerSize,
+      params,
+      color,
+      playing: drawing,
+      view,
+    });
+
+  // ----- Pointer → gear roll -----
+  // We read the cursor's angle around the canvas center and feed each angular
+  // delta into the engine. Moving the mouse counter-clockwise around the board
+  // rolls the gear forward, clockwise reverses it.
+  const prevAngleRef = useRef(null);
+  const sensitivityRef = useRef(params.sensitivity);
+  sensitivityRef.current = params.sensitivity;
+  const drawingRef = useRef(drawing);
+  drawingRef.current = drawing;
+
+  const readAngle = useCallback((clientX, clientY) => {
+    const container = containerRef.current;
+    if (!container) return null;
+    const rect = container.getBoundingClientRect();
+    const mx = clientX - rect.left - rect.width / 2;
+    // Flip y: DOM y grows downward, our math frame is y-up.
+    const my = -(clientY - rect.top - rect.height / 2);
+    if (mx === 0 && my === 0) return null;
+    return Math.atan2(my, mx);
+  }, []);
+
+  const drawModeRef = useRef(view.drawMode);
+  drawModeRef.current = view.drawMode;
+
+  const handlePointerMove = useCallback(
+    (e) => {
+      if (!drawingRef.current) return;
+      if (drawModeRef.current !== 'cursor') return;
+      const angle = readAngle(e.clientX, e.clientY);
+      if (angle == null) return;
+
+      const prev = prevAngleRef.current;
+      if (prev == null) {
+        prevAngleRef.current = angle;
+        return;
+      }
+
+      // Shortest-arc unwrap so crossing the ±π seam doesn't cause a huge jump.
+      let delta = angle - prev;
+      if (delta > Math.PI) delta -= TAU;
+      else if (delta < -Math.PI) delta += TAU;
+
+      prevAngleRef.current = angle;
+      advanceBy(delta * sensitivityRef.current);
+    },
+    [advanceBy, readAngle]
+  );
+
+  const handlePointerEnter = useCallback(
+    (e) => {
+      if (drawModeRef.current !== 'cursor') return;
+      prevAngleRef.current = readAngle(e.clientX, e.clientY);
+      liftPen();
+    },
+    [liftPen, readAngle]
+  );
+
+  const handlePointerLeave = useCallback(() => {
+    if (drawModeRef.current !== 'cursor') return;
+    prevAngleRef.current = null;
+    liftPen();
+  }, [liftPen]);
+
+  // Toggling play state or switching modes lifts the pen so there's no
+  // jumping line segment across the transition.
+  useEffect(() => {
+    prevAngleRef.current = null;
+    liftPen();
+  }, [drawing, view.drawMode, liftPen]);
+
+  // ----- Toolbar actions -----
+  const handleDrawToggle = useCallback(() => setDrawing((p) => !p), []);
+
+  const handleClear = useCallback(() => {
+    clearDrawing();
+  }, [clearDrawing]);
+
+  const handleReset = useCallback(() => {
+    setParams(DEFAULT_PARAMS);
+    setColor(DEFAULT_COLOR);
+    setView(DEFAULT_VIEW);
+    setDrawing(false);
+    resetEngine();
+  }, [resetEngine]);
+
+  const handleExport = useCallback(() => {
+    const bg = view.theme === 'dark' ? '#0f0f1a' : '#ffffff';
+    exportCanvasAsPng(drawCanvasRef.current, {
+      filename: `spirograph-${Date.now()}.png`,
+      background: bg,
+    });
+  }, [view.theme]);
+
+  const handleRandomize = useCallback(() => {
+    const { params: rp, color: rc } = randomPreset();
+    setParams((prev) => ({ ...prev, ...rp }));
+    setColor(rc);
+  }, []);
+
+  const handleApplyPreset = useCallback((preset) => {
+    setParams((prev) => ({ ...DEFAULT_PARAMS, ...prev, ...preset.params }));
+    setColor({ ...DEFAULT_COLOR, ...preset.color });
+  }, []);
+
+  return (
+    <div className={`app app--${view.theme}`}>
+      <header className="app__header">
+        <div className="app__brand">
+          <span className="app__brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="24" height="24">
+              <circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" strokeWidth="1.6" />
+              <circle cx="16" cy="9" r="5" fill="none" stroke="currentColor" strokeWidth="1.3" opacity="0.7" />
+              <circle cx="16" cy="6" r="1.6" fill="currentColor" />
+            </svg>
+          </span>
+          <div>
+            <h1 className="app__title">Spirograph Studio</h1>
+            <p className="app__subtitle">{getSubtitle(view.drawMode, drawing)}</p>
+          </div>
+        </div>
+        <div className="app__header-actions">
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => setView((v) => ({ ...v, theme: v.theme === 'dark' ? 'light' : 'dark' }))}
+            title="Toggle theme"
+          >
+            {view.theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          </button>
+        </div>
+      </header>
+
+      <main className="app__main">
+        <DrawingCanvas
+          drawCanvasRef={drawCanvasRef}
+          overlayCanvasRef={overlayCanvasRef}
+          containerRef={containerRef}
+          theme={view.theme}
+          drawing={drawing}
+          onPointerMove={handlePointerMove}
+          onPointerEnter={handlePointerEnter}
+          onPointerLeave={handlePointerLeave}
+        />
+        <ControlPanel
+          params={params}
+          color={color}
+          view={view}
+          playing={drawing}
+          onParamsChange={setParams}
+          onColorChange={setColor}
+          onViewChange={setView}
+          onPlayPause={handleDrawToggle}
+          onClear={handleClear}
+          onReset={handleReset}
+          onUndo={undoLastRun}
+          onExport={handleExport}
+          onRandomize={handleRandomize}
+          onApplyPreset={handleApplyPreset}
+        />
+      </main>
+    </div>
+  );
+}
