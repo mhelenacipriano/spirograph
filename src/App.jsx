@@ -309,6 +309,7 @@ export default function App() {
               color={color}
               playing={drawing}
               drawMode={view.drawMode}
+              limits={limits}
               onParamsChange={setParams}
               onColorChange={setColor}
               onPlayPause={handleDrawToggle}

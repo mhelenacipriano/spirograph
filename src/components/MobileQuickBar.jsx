@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { SHAPES, ShapeIcon } from './ShapeSelector.jsx';
 
 /**
@@ -22,6 +23,7 @@ export default function MobileQuickBar({
   color,
   playing,
   drawMode,
+  limits,
   onParamsChange,
   onColorChange,
   onPlayPause,
@@ -30,6 +32,8 @@ export default function MobileQuickBar({
   onRedo,
   onOpenMenu,
 }) {
+  const [shapeTab, setShapeTab] = useState('outer');
+
   const activeSwatch = color.mode === 'solid' ? color.value : null;
   const playLabel = playing
     ? 'Pause'
@@ -37,43 +41,120 @@ export default function MobileQuickBar({
       ? 'Draw'
       : 'Play';
 
+  const shapeKey = shapeTab === 'outer' ? 'outerShape' : 'innerShape';
+  const activeShape = params[shapeKey];
+  const setActiveShape = (id) => onParamsChange({ ...params, [shapeKey]: id });
+
+  // The size slider targets whichever shape the tab currently controls.
+  const sizeKey = shapeTab === 'outer' ? 'outerSize' : 'innerSize';
+  const sizeMin = shapeTab === 'outer' ? 60 : 15;
+  const sizeMax = Math.max(
+    sizeMin,
+    shapeTab === 'outer'
+      ? (limits?.maxOuterSize ?? 320)
+      : (limits?.maxInnerSize ?? 260)
+  );
+  const sizeValue = Math.min(params[sizeKey], sizeMax);
+
   return (
     <>
       <div className="mq-top-bar">
-        <div className="mq-pill" role="radiogroup" aria-label="Outer shape">
-          {SHAPES.map((s) => (
+        <div className="mq-row">
+          <div
+            className="mq-pill mq-pill--tabs"
+            role="tablist"
+            aria-label="Shape target"
+          >
             <button
-              key={s.id}
               type="button"
-              role="radio"
-              aria-checked={params.outerShape === s.id}
-              aria-label={s.label}
-              className={`mq-chip ${params.outerShape === s.id ? 'mq-chip--active' : ''}`}
-              onClick={() => onParamsChange({ ...params, outerShape: s.id })}
+              role="tab"
+              aria-selected={shapeTab === 'outer'}
+              aria-label="Edit outer shape"
+              title="Outer shape"
+              className={`mq-chip ${shapeTab === 'outer' ? 'mq-chip--active' : ''}`}
+              onClick={() => setShapeTab('outer')}
             >
-              <ShapeIcon id={s.id} />
+              <OuterTabIcon />
             </button>
-          ))}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={shapeTab === 'inner'}
+              aria-label="Edit inner shape"
+              title="Inner shape"
+              className={`mq-chip mq-chip--inner-tab ${shapeTab === 'inner' ? 'mq-chip--active' : ''}`}
+              onClick={() => setShapeTab('inner')}
+            >
+              <InnerTabIcon />
+            </button>
+          </div>
+          <div className="mq-pill mq-pill--history" aria-label="History">
+            <button
+              type="button"
+              className="mq-chip mq-chip--action"
+              onClick={onUndo}
+              aria-label="Undo"
+              title="Undo"
+            >
+              <UndoIcon />
+            </button>
+            <button
+              type="button"
+              className="mq-chip mq-chip--action"
+              onClick={onRedo}
+              aria-label="Redo"
+              title="Redo"
+            >
+              <RedoIcon />
+            </button>
+          </div>
         </div>
-        <div className="mq-pill mq-pill--history" aria-label="History">
-          <button
-            type="button"
-            className="mq-chip mq-chip--action"
-            onClick={onUndo}
-            aria-label="Undo"
-            title="Undo"
+
+        <div className="mq-row">
+          <div
+            className={`mq-pill mq-pill--shape mq-pill--shape-${shapeTab}`}
+            role="radiogroup"
+            aria-label={`${shapeTab} shape`}
           >
-            <UndoIcon />
-          </button>
-          <button
-            type="button"
-            className="mq-chip mq-chip--action"
-            onClick={onRedo}
-            aria-label="Redo"
-            title="Redo"
+            {SHAPES.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                role="radio"
+                aria-checked={activeShape === s.id}
+                aria-label={`${shapeTab} ${s.label}`}
+                className={`mq-chip ${activeShape === s.id ? 'mq-chip--active' : ''}`}
+                onClick={() => setActiveShape(s.id)}
+              >
+                <ShapeIcon id={s.id} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mq-row">
+          <label
+            className="mq-pill mq-pill--slider"
+            aria-label={`${shapeTab} size`}
           >
-            <RedoIcon />
-          </button>
+            <span className="mq-slider__icon" aria-hidden="true">
+              <SizeIcon />
+            </span>
+            <input
+              type="range"
+              className="mq-range"
+              min={sizeMin}
+              max={sizeMax}
+              value={sizeValue}
+              onChange={(e) =>
+                onParamsChange({
+                  ...params,
+                  [sizeKey]: Number(e.target.value),
+                })
+              }
+            />
+            <span className="mq-slider__value">{sizeValue}</span>
+          </label>
         </div>
       </div>
 
@@ -163,5 +244,24 @@ const RedoIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
     <path d="M15 14l5-5-5-5" {...I} />
     <path d="M20 9H10a6 6 0 0 0-6 6v0a6 6 0 0 0 6 6h5" {...I} />
+  </svg>
+);
+const SizeIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+    <path d="M4 4l6 6M14 14l6 6M4 4h5M4 4v5M20 20h-5M20 20v-5" {...I} />
+  </svg>
+);
+// Outer/Inner tab icons: concentric circles where the relevant ring is
+// emphasized (thicker stroke) so the pair reads as a visual opposition.
+const OuterTabIcon = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2.2" />
+    <circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.55" />
+  </svg>
+);
+const InnerTabIcon = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.55" />
+    <circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" strokeWidth="2.2" />
   </svg>
 );

@@ -38,7 +38,7 @@
 }
 
 // ============================================================================
-// Top bar — holds the shape pill and the undo/redo history pill side-by-side.
+// Top bar — stacked rows for shape pickers, undo/redo, and size slider.
 // ============================================================================
 .mq-top-bar {
   position: absolute;
@@ -47,9 +47,18 @@
   transform: translateX(-50%);
   z-index: 10;
   display: flex;
+  flex-direction: column;
   gap: 8px;
   align-items: center;
   max-width: calc(100vw - 24px);
+}
+
+.mq-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
 }
 
 // ============================================================================
@@ -79,12 +88,87 @@
     overflow: visible;
   }
 
+  &--tabs {
+    flex-shrink: 0;
+    overflow: visible;
+    padding: 3px;
+    gap: 2px;
+  }
+
+  &--slider {
+    flex-shrink: 0;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    overflow: visible;
+  }
+
   &--colors {
     position: absolute;
     bottom: 20px;
     left: 12px;
     padding: 6px;
     z-index: 10;
+  }
+}
+
+// When the shape pill or the Inner tab chip is active, swap the active
+// gradient to cyan→purple so the user always has a visual cue about which
+// context they're editing.
+.mq-pill--shape-inner .mq-chip--active,
+.mq-chip--inner-tab.mq-chip--active {
+  background: linear-gradient(135deg, $accent-3, $accent);
+}
+
+// Compact horizontal range slider used for the mobile quick size control.
+.mq-slider {
+  &__icon {
+    display: inline-flex;
+    color: var(--app-text-muted);
+  }
+
+  &__value {
+    font-family: $font-mono;
+    font-size: 11px;
+    color: var(--app-text);
+    min-width: 32px;
+    text-align: right;
+  }
+}
+
+.mq-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 160px;
+  max-width: 40vw;
+  height: 4px;
+  background: var(--app-border);
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--app-accent);
+    border: 2px solid var(--app-surface);
+    box-shadow: 0 0 0 1px var(--app-border), 0 2px 6px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+  }
+
+  &::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--app-accent);
+    border: 2px solid var(--app-surface);
+    box-shadow: 0 0 0 1px var(--app-border);
+    cursor: pointer;
   }
 }
 
