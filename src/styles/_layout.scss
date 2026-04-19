@@ -17,7 +17,11 @@ body {
 .app {
   display: flex;
   flex-direction: column;
+  // Dynamic viewport height tracks the actual visible area on mobile when
+  // the URL bar / toolbar show or hide. Fall back to `100vh` for older
+  // browsers that don't support `dvh`.
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   background: var(--app-bg);
   color: var(--app-text);
